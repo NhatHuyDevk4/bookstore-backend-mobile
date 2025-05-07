@@ -24,10 +24,7 @@ router.post("/create", protectRoute, async (req, res) => {
         // Upload image to Cloudinary
         let imageUrl;
         try {
-            const uploadResponse = await cloudinary.uploader.upload(image, {
-                folder: "book_images",
-                resource_type: "image",
-            });
+            const uploadResponse = await cloudinary.uploader.upload(image)
             console.log("Cloudinary upload response:", uploadResponse);
             imageUrl = uploadResponse.secure_url;
         } catch (cloudinaryError) {
