@@ -6,7 +6,7 @@ import protectRoute from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 // create 
-router.post("/", protectRoute, async (req, res) => {
+router.post("/create", protectRoute, async (req, res) => {
     try {
 
         const { title, caption, image, rating, user } = req.body;
