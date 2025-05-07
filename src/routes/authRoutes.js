@@ -72,20 +72,20 @@ router.post("/register", async (req, res) => {
 })
 
 router.post("/login", async (req, res) => {
-   
+
     try {
         const { email, password } = req.body;
-        if(!email || !password) {
+        if (!email || !password) {
             return res.status(400).json({ message: "Please fill all fields" });
         }
 
-        const user = await User.findOne({email});
-        if(!user) {
+        const user = await User.findOne({ email });
+        if (!user) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
         const isPasswordMatched = await user.comparePassword(password);
-        if(!isPasswordMatched) {
+        if (!isPasswordMatched) {
             return res.status(400).json({ message: "Invalid password" });
         }
 
@@ -98,6 +98,7 @@ router.post("/login", async (req, res) => {
                 username: user.username,
                 email: user.email,
                 profileImage: user.profileImage,
+                createdAt: user.createdAt,
             },
             message: "User logged in successfully"
         });
