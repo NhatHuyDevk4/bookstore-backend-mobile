@@ -2,34 +2,55 @@ import express from 'express';
 import cloudinary from '../lib/cloudinary.js';
 import Book from '../model/Book.js';
 import protectRoute from '../middleware/auth.middleware.js';
-
+import multer from 'multer';
 const router = express.Router();
 
-// create 
-router.post("/create", protectRoute, async (req, res) => {
-    try {
-        console.log("Request body:", req.body);
 
-        const { title, caption, image, rating } = req.body;
-        if (!title || !caption || !image || !rating) {
-            return res.status(400).json({ message: "Please fill all fields" });
+// Configure multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+const upload = multer({ storage });
+
+// create 
+router.post('/create', protectRoute, upload.single('image'), async (req, res) => {
+    try {
+        console.log('Request body:', req.body, 'File:', req.file);
+
+        const { title, caption, rating } = req.body;
+        if (!title || !caption || !req.file || !rating) {
+            return res.status(400).json({ message: 'Please fill all fields' });
         }
 
         // Validate rating
         const parsedRating = parseFloat(rating);
         if (isNaN(parsedRating) || parsedRating < 0 || parsedRating > 5) {
-            return res.status(400).json({ message: "Rating must be a number between 0 and 5" });
+            return res.status(400).json({ message: 'Rating must be a number between 0 and 5' });
         }
 
         // Upload image to Cloudinary
         let imageUrl;
         try {
-            const uploadResponse = await cloudinary.uploader.upload(image)
-            console.log("Cloudinary upload response:", uploadResponse);
+            const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
+                folder: 'books', // Optional: Organize images in a folder
+            });
+            console.log('Cloudinary upload response:', uploadResponse);
+            if (!uploadResponse.secure_url) {
+                throw new Error('Cloudinary did not return a secure URL');
+            }
             imageUrl = uploadResponse.secure_url;
+
+            // Clean up temporary file
+            const fs = require('fs');
+            fs.unlinkSync(req.file.path);
         } catch (cloudinaryError) {
-            console.error("Cloudinary upload error:", cloudinaryError);
-            return res.status(500).json({ message: "Failed to upload image to Cloudinary" });
+            console.error('Cloudinary upload error:', cloudinaryError.message, cloudinaryError);
+            return res.status(500).json({ message: 'Failed to upload image to Cloudinary' });
         }
 
         // Create new book
@@ -42,17 +63,17 @@ router.post("/create", protectRoute, async (req, res) => {
         });
 
         // Save to MongoDB
-        console.log("Saving book:", newBook);
+        console.log('Saving book:', newBook);
         await newBook.save();
-        console.log("Book saved successfully:", newBook);
+        console.log('Book saved successfully:', newBook);
 
         res.status(201).json({
-            message: "Book created successfully",
+            message: 'Book created successfully',
             newBook,
         });
     } catch (error) {
-        console.error("Error creating book:", error);
-        res.status(500).json({ message: error.message || "Internal server error" });
+        console.error('Error creating book:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
     }
 });
 
