@@ -76,7 +76,7 @@ router.post('/create', protectRoute, async (req, res) => {
 });
 
 // get
-router.post("/", protectRoute, async (req, res) => {
+router.get("/", protectRoute, async (req, res) => {
     try {
         const page = req.query.page || 1; // Lấy số trang từ query string, mặc định là 1
         const limit = req.query.limit || 5; // Lấy số lượng bản ghi trên mỗi trang từ query string, mặc định là 5
