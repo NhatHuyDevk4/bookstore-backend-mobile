@@ -2,25 +2,25 @@ import express from 'express';
 import cloudinary from '../lib/cloudinary.js';
 import Book from '../model/Book.js';
 import protectRoute from '../middleware/auth.middleware.js';
-import multer from 'multer';
+// import multer from 'multer';
 const router = express.Router();
 
 
 // Configure multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
-});
-const upload = multer({ storage });
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'uploads/');
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, `${Date.now()}-${file.originalname}`);
+//     },
+// });
+
+// const upload = multer({ storage });
 
 // create 
-router.post('/create', protectRoute, upload.single('image'), async (req, res) => {
+router.post('/create', protectRoute, async (req, res) => {
     try {
-        console.log('Request body:', req.body, 'File:', req.file);
 
         const { title, caption, rating } = req.body;
         if (!title || !caption || !req.file || !rating) {
@@ -34,32 +34,30 @@ router.post('/create', protectRoute, upload.single('image'), async (req, res) =>
         }
 
         // Upload image to Cloudinary
-        let imageUrl;
-        try {
-            const uploadResponse = await cloudinary.uploader.upload(req.file.path, {
-                folder: 'books', // Optional: Organize images in a folder
-            });
-            console.log('Cloudinary upload response:', uploadResponse);
-            if (!uploadResponse.secure_url) {
-                throw new Error('Cloudinary did not return a secure URL');
-            }
-            imageUrl = uploadResponse.secure_url;
+        // let imageUrl;
+        // try {
+        //     const uploadResponse = await cloudinary.uploader.upload(req.file.path);
+        //     console.log('Cloudinary upload response:', uploadResponse);
+        //     if (!uploadResponse.secure_url) {
+        //         throw new Error('Cloudinary did not return a secure URL');
+        //     }
+        //     imageUrl = uploadResponse.secure_url;
 
-            // Clean up temporary file
-            const fs = require('fs');
-            fs.unlinkSync(req.file.path);
-        } catch (cloudinaryError) {
-            console.error('Cloudinary upload error:', cloudinaryError.message, cloudinaryError);
-            return res.status(500).json({ message: 'Failed to upload image to Cloudinary' });
-        }
+        //     // Clean up temporary file
+        //     const fs = require('fs');
+        //     fs.unlinkSync(req.file.path);
+        // } catch (cloudinaryError) {
+        //     console.error('Cloudinary upload error:', cloudinaryError.message, cloudinaryError);
+        //     return res.status(500).json({ message: 'Failed to upload image to Cloudinary' });
+        // }
 
         // Create new book
         const newBook = new Book({
             title,
             caption,
-            image: imageUrl,
+            image,
             rating: parsedRating,
-            user: req.user._id,
+            user: req.user._id, // req.user._id là ID người dùng đã xác thực
         });
 
         // Save to MongoDB
