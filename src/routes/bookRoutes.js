@@ -22,8 +22,8 @@ const router = express.Router();
 router.post('/create', protectRoute, async (req, res) => {
     try {
 
-        const { title, caption, rating } = req.body;
-        if (!title || !caption || !req.file || !rating) {
+        const { title, caption, rating, image } = req.body;
+        if (!title || !caption || !image || !rating) {
             return res.status(400).json({ message: 'Please fill all fields' });
         }
 

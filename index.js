@@ -13,7 +13,7 @@ job.start();
 app.use(express.json());
 // Nếu cần nhận form-url-encoded (không bắt buộc cho JSON)
 app.use(express.urlencoded({ extended: true }));
-const PORT = process.env.API_URL
+const PORT = process.env.PORT || 3000;
 
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
