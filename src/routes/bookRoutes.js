@@ -8,37 +8,56 @@ const router = express.Router();
 // create 
 router.post("/create", protectRoute, async (req, res) => {
     try {
+        console.log("Request body:", req.body);
 
-        const { title, caption, image, rating, user } = req.body;
-        if (!title || !caption || !image || !rating || !user) {
+        const { title, caption, image, rating } = req.body;
+        if (!title || !caption || !image || !rating) {
             return res.status(400).json({ message: "Please fill all fields" });
         }
 
-        // Upload ảnh lên cloudinary
-        const uploadResponse = await cloudinary.uploader.upload(image);
-        const imageUrl = uploadResponse.secure_url; // Lấy URL của ảnh đã upload
+        // Validate rating
+        const parsedRating = parseFloat(rating);
+        if (isNaN(parsedRating) || parsedRating < 0 || parsedRating > 5) {
+            return res.status(400).json({ message: "Rating must be a number between 0 and 5" });
+        }
 
+        // Upload image to Cloudinary
+        let imageUrl;
+        try {
+            const uploadResponse = await cloudinary.uploader.upload(image, {
+                folder: "book_images",
+                resource_type: "image",
+            });
+            console.log("Cloudinary upload response:", uploadResponse);
+            imageUrl = uploadResponse.secure_url;
+        } catch (cloudinaryError) {
+            console.error("Cloudinary upload error:", cloudinaryError);
+            return res.status(500).json({ message: "Failed to upload image to Cloudinary" });
+        }
+
+        // Create new book
         const newBook = new Book({
             title,
             caption,
-            image: imageUrl, // Sử dụng URL đã upload
-            rating,
-            user: req.user._id // Sử dụng ID của người dùng đã xác thực
-        })
+            image: imageUrl,
+            rating: parsedRating,
+            user: req.user._id,
+        });
 
+        // Save to MongoDB
+        console.log("Saving book:", newBook);
         await newBook.save();
+        console.log("Book saved successfully:", newBook);
 
         res.status(201).json({
             message: "Book created successfully",
-            newBook
-        })
-
-
+            newBook,
+        });
     } catch (error) {
         console.error("Error creating book:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: error.message || "Internal server error" });
     }
-})
+});
 
 // get
 router.post("/", protectRoute, async (req, res) => {
